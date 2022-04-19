@@ -6,18 +6,17 @@
 #define SERVER_PORT 8080
 
 
-void func(int sockfd)
-{
-	char buff[MAX];
+void func(int sockfd) {
+	char buff[80];
 	int n;
 	for (;;) {
-		bzero(buff, sizeof(buff));
+        memset(&buff, 0, sizeof(buff));
 		printf("Enter the string : ");
 		n = 0;
-		while ((buff[n++] = getchar()) != '\n')
-			;
+		while ((buff[n++] = getchar()) != '\n');
+
 		write(sockfd, buff, sizeof(buff));
-		bzero(buff, sizeof(buff));
+		memset(&buff, 0, sizeof(buff));
 		read(sockfd, buff, sizeof(buff));
 		printf("From Server : %s", buff);
 		if ((strncmp(buff, "exit", 4)) == 0) {
@@ -27,29 +26,28 @@ void func(int sockfd)
 	}
 }
 
-int main()
-{
+int main() {
 	int sockfd, connfd;
-	struct sockaddr_in servaddr, cli;
+	struct sockaddr_in s;
 
-	// socket create and verification
+	// Socket creation
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
-		printf("socket creation failed...\n");
-		exit(0);
+		perror("Error when creating client socket");
+        exit(1);
 	}
-	else
-		printf("Socket successfully created..\n");
-	bzero(&servaddr, sizeof(servaddr));
+    
+    // Make sure the struct is empty
+    memset(&s, 0, sizeof(s));
 
-	// assign IP, PORT
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	servaddr.sin_port = htons(PORT);
+	// IP and Port assignments
+	s.sin_family = AF_INET;
+	s.sin_addr.s_addr = inet_addr("127.0.0.1");
+	s.sin_port = htons(SERVER_PORT);
 
 	// connect the client socket to server socket
-	if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) {
-		printf("connection with the server failed...\n");
+	if (connect(sockfd, (struct sockaddr *)&s, sizeof(s)) != 0) {
+		perror("Error when connecting with server");
 		exit(1);
 	}
 

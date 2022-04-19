@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -13,14 +15,14 @@ void func(int conn) {
     int n;
     // infinite loop for chat
     for (;;) {
-        bzero(buff, MAX);
+        memset(&buff, 0, sizeof(buff));
    
         // read the message from client and copy it in buffer
         read(conn, buff, sizeof(buff));
 
         // print buffer which contains the client contents
         printf("From client: %s\t To client : ", buff);
-        bzero(buff, MAX);
+        memset(&buff, 0, sizeof(buff));
         n = 0;
         // copy server message in the buffer
         while ((buff[n++] = getchar()) != '\n');
@@ -43,7 +45,7 @@ int main() {
     // Socket creation
     sockfd = socket(PF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        perror("Erro - socket:");
+        perror("Error when creating socket");
         exit(1);
     }
 
@@ -57,22 +59,22 @@ int main() {
 
     // Binding newly created socket to given IP and verification
     if ((bind(sockfd, (struct sockaddr *)&s, sizeof(s))) != 0) {
-        perror("Erro - bind:");
+        perror("Error when binding socket");
         exit(1);
     }
 
     // Now server is ready to listen and verification
     if ((listen(sockfd, MAX_CONNS)) != 0) {
-        perror("Erro - listen:");
+        perror("Error when listening");
         exit(1);
     }
 
-    len = sizeof(client);
+    int len = sizeof(client);
    
     // Accept the data packet from client and verification
     int new_s = accept(sockfd, (struct sockaddr *)&client, &len);
     if (new_s < 0) {
-        perror("Erro - accept:");
+        perror("Error when accepting a connection");
         exit(1);
     }
    
