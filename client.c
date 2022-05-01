@@ -9,20 +9,18 @@
 void func(int sockfd) {
 	char buff[80];
 	int n;
+
+	printf("O que deseja fazer: ");
 	for (;;) {
         memset(&buff, 0, sizeof(buff));
-		printf("Enter the string : ");
+		
 		n = 0;
 		while ((buff[n++] = getchar()) != '\n');
-
+		
 		write(sockfd, buff, sizeof(buff));
 		memset(&buff, 0, sizeof(buff));
 		read(sockfd, buff, sizeof(buff));
-		printf("From Server : %s", buff);
-		if ((strncmp(buff, "exit", 4)) == 0) {
-			printf("Client Exit...\n");
-			break;
-		}
+		printf("%s", buff);
 	}
 }
 
