@@ -14,7 +14,7 @@ typedef struct Movie {
 	char title[60];
 	char genre[30];
 	char director[30];
-	unsigned int year;
+	int year;
 } Movie;
 
 Movie movies[10];
@@ -42,12 +42,13 @@ void cadastrar_filme(int conn) {
     write(conn, msg, sizeof(msg));
     read(conn, title, sizeof(title));
 
-    memset(msg, 0, sizeof(msg));
+    memset(&msg, 0, sizeof(msg));
 
     // Pede o genero do filme
     strcpy(msg, "Digite o genero do filme: ");
     write(conn, msg, sizeof(msg));
     read(conn, genre, sizeof(genre));
+    printf("%s", genre);
 
     memset(&msg, 0, sizeof(msg));
 
@@ -84,9 +85,72 @@ void cadastrar_filme(int conn) {
 }
 
 void listar_titulos(int conn) {
+    char msg[80];
+
     for (int i=0; i < movies_counter; i++) {
         // Modificar pra escrita de arquivo dps
-        printf("Titulo: %s , ID: %d\n", movies[i].title, movies[i].id);
+        printf("Titulo: %s, ID: %d\n", movies[i].title, movies[i].id);
+    }
+
+    strcpy(msg, "Deseja fazer outra operação? ");
+    write(conn, msg, sizeof(msg));
+}
+
+void listar_filmes(int conn) {
+    char msg[80];
+
+    for (int i=0; i < movies_counter; i++) {
+        // Modificar pra escrita de arquivo dps
+        printf("ID: %d, Titulo: %s, Ano: %d\n", movies[i].id, movies[i].title, movies[i].year);
+        printf("Genero: %s, Diretor: %s\n", movies[i].genre, movies[i].director);
+    }
+
+    strcpy(msg, "Deseja fazer outra operação? ");
+    write(conn, msg, sizeof(msg));
+}
+
+void remover_filme(int conn) {
+    char msg[80];
+    char id_to_rmv[10];
+
+    // Pede o ID do filme
+    strcpy(msg, "Digite o ID do filme que deseja remover: ");
+    write(conn, msg, sizeof(msg));
+    
+    memset(&msg, 0, sizeof(msg));
+
+    read(conn, id_to_rmv, sizeof(id_to_rmv));
+
+    for (int i = movies_counter-1; i >= 0; i--) {
+        if (movies[i].id == atoi(id_to_rmv)) {
+            if (i != movies_counter-1) {
+                movies[i] = movies[i+1];
+            } else {
+                memset(&movies[i], 0, sizeof(Movie));
+            }
+
+            movies_counter--;
+        }
+    }
+
+    strcpy(msg, "Deseja fazer outra operação? ");
+    write(conn, msg, sizeof(msg));
+}
+
+void ver_infos_filme(int conn) {
+    char msg[80];
+    char id[10];
+
+    strcpy(msg, "Digite o ID do filme: ");
+    write(conn, msg, sizeof(msg));
+
+    read(conn, id, sizeof(id));
+
+    for (int i=0; i < movies_counter; i++) {
+        if (movies[i].id == atoi(id)) {
+            printf("ID: %d, Titulo: %s, Ano: %d\n", movies[i].id, movies[i].title, movies[i].year);
+            printf("Genero: %s, Diretor: %s\n", movies[i].genre, movies[i].director);
+        }
     }
 }
 
@@ -103,23 +167,26 @@ void func(int conn) {
         // print buffer which contains the client contents
         printf("From client: %s", buff);
 
-        if (strcmp(buff,"cadastrar filme\n") == 0) {
+        if (strcmp(buff,"cadastrar filme") == 0) {
 			printf("\nCadastrando filme...");
             cadastrar_filme(conn);
             printf("Cadastro finalizado\n");
-		} else if (strcmp(buff,"adicionar genero\n") == 0) {
+		} else if (strcmp(buff,"adicionar genero") == 0) {
 			printf("Adicionando genero");
-		} else if (strcmp(buff,"listar titulos\n") == 0) {
+		} else if (strcmp(buff,"listar titulos") == 0) {
 			printf("\nListando titulos...\n");
             listar_titulos(conn);
-		} else if (strcmp(buff,"listar info genero\n") == 0) {
+		} else if (strcmp(buff,"listar info genero") == 0) {
 			printf("Listando info genero");
-		} else if (strcmp(buff,"listar filmes\n") == 0) {
-			printf("Listando filmes");
-		} else if (strcmp(buff,"ver infos filme\n") == 0) {
-			printf("Vendo infos do filme");
-		} else if (strcmp(buff,"remover filme\n") == 0) {
-			printf("Removendo filme");
+		} else if (strcmp(buff,"listar filmes") == 0) {
+			printf("\nListando filmes...\n");
+            listar_filmes(conn);
+		} else if (strcmp(buff,"ver infos filme") == 0) {
+			printf("Vendo infos do filme...");
+            ver_infos_filme(conn);
+		} else if (strcmp(buff,"remover filme") == 0) {
+			printf("\nRemovendo filme...\n");
+            remover_filme(conn);
 		}
 
 
