@@ -20,9 +20,26 @@ typedef struct Movie {
 Movie movies[10];
 int movies_counter = 0;
 
+void movie_to_file(Movie movie) {
+    FILE *f;
+    char file_name[15];
+
+    sprintf(file_name, "%d", movie.id);
+    strcat(file_name, ".txt");
+
+    f = fopen(file_name, "w");
+    if (f == NULL) {
+        fprintf(stderr, "\nErro ao abrir arquivo\n");
+        exit(1);
+    }
+
+    fprintf(f, "ID: %d\nTitulo: %s\nGenero: %s\nDirecao: %s\nAno: %d", movie.id, movie.title, movie.genre, movie.director, movie.year);
+
+    fclose(f);
+}
+
 void cadastrar_filme(int conn) {
     char msg[80];
-    // memset(&buff, 0, sizeof(buff));
 
     if (movies_counter == 10) {
         // Lista de filmes atingiu seu máximo
@@ -31,40 +48,42 @@ void cadastrar_filme(int conn) {
         return;
     }
 
-    int id;
-    char title[60];
-    char genre[30];
-    char director[30];
-    char year[4];
 
     // Pede o titulo do filme
     strcpy(msg, "Digite o titulo do filme: ");
     write(conn, msg, sizeof(msg));
-    read(conn, title, sizeof(title));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+    strcpy(movies[movies_counter].title, msg);
 
     memset(&msg, 0, sizeof(msg));
 
     // Pede o genero do filme
     strcpy(msg, "Digite o genero do filme: ");
     write(conn, msg, sizeof(msg));
-    read(conn, genre, sizeof(genre));
-    printf("%s", genre);
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+    strcpy(movies[movies_counter].genre, msg);
 
     memset(&msg, 0, sizeof(msg));
 
     // Pede o nome do diretor do filme
     strcpy(msg, "Digite o nome do diretor do filme: ");
     write(conn, msg, sizeof(msg));
-    read(conn, director, sizeof(director));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+    strcpy(movies[movies_counter].director, msg);
 
     memset(&msg, 0, sizeof(msg));
 
     // Pede o ano do filme
     strcpy(msg, "Digite o ano do filme: ");
     write(conn, msg, sizeof(msg));
-    read(conn, year, sizeof(year));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+    movies[movies_counter].year = atoi(msg);
 
-    id = rand();
+    int id = rand();
     for (int i=0; i < movies_counter; i++) {
         while (movies[i].id == id) {
             id = rand();
@@ -72,10 +91,8 @@ void cadastrar_filme(int conn) {
     }
 
     movies[movies_counter].id = id;
-    strcpy(movies[movies_counter].title, title);
-    strcpy(movies[movies_counter].genre, genre);
-    strcpy(movies[movies_counter].director, director);
-    movies[movies_counter].year = atoi(year);
+
+    movie_to_file(movies[movies_counter]);
 
     movies_counter++;
 
@@ -111,18 +128,19 @@ void listar_filmes(int conn) {
 
 void remover_filme(int conn) {
     char msg[80];
-    char id_to_rmv[10];
+    int flag = 0;
 
     // Pede o ID do filme
     strcpy(msg, "Digite o ID do filme que deseja remover: ");
     write(conn, msg, sizeof(msg));
-    
     memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
 
-    read(conn, id_to_rmv, sizeof(id_to_rmv));
+    int id_to_rmv = atoi(msg);
 
     for (int i = movies_counter-1; i >= 0; i--) {
-        if (movies[i].id == atoi(id_to_rmv)) {
+        if (movies[i].id == id_to_rmv) {
+            flag = 1;
             if (i != movies_counter-1) {
                 movies[i] = movies[i+1];
             } else {
@@ -133,25 +151,45 @@ void remover_filme(int conn) {
         }
     }
 
-    strcpy(msg, "Deseja fazer outra operação? ");
+    memset(&msg, 0, sizeof(msg));
+
+    if (flag != 1) {
+        strcpy(msg, "ID inválido: filme não existe. Deseja fazer outra operação? ");
+    } else {
+        strcpy(msg, "Deseja fazer outra operação? ");
+    }
+
     write(conn, msg, sizeof(msg));
 }
 
 void ver_infos_filme(int conn) {
     char msg[80];
-    char id[10];
+    int flag = 0;
 
     strcpy(msg, "Digite o ID do filme: ");
     write(conn, msg, sizeof(msg));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
 
-    read(conn, id, sizeof(id));
+    int id_to_see = atoi(msg);
 
     for (int i=0; i < movies_counter; i++) {
-        if (movies[i].id == atoi(id)) {
+        if (movies[i].id == id_to_see) {
+            flag = 1;
             printf("ID: %d, Titulo: %s, Ano: %d\n", movies[i].id, movies[i].title, movies[i].year);
             printf("Genero: %s, Diretor: %s\n", movies[i].genre, movies[i].director);
         }
     }
+
+    memset(&msg, 0, sizeof(msg));
+
+    if (flag != 1) {
+        strcpy(msg, "ID inválido: filme não existe. Deseja fazer outra operação? ");
+    } else {
+        strcpy(msg, "Deseja fazer outra operação? ");
+    }
+
+    write(conn, msg, sizeof(msg));
 }
 
 void func(int conn) {
@@ -170,7 +208,7 @@ void func(int conn) {
         if (strcmp(buff,"cadastrar filme") == 0) {
 			printf("\nCadastrando filme...");
             cadastrar_filme(conn);
-            printf("Cadastro finalizado\n");
+            printf("\nCadastro finalizado\n");
 		} else if (strcmp(buff,"adicionar genero") == 0) {
 			printf("Adicionando genero");
 		} else if (strcmp(buff,"listar titulos") == 0) {
@@ -182,7 +220,7 @@ void func(int conn) {
 			printf("\nListando filmes...\n");
             listar_filmes(conn);
 		} else if (strcmp(buff,"ver infos filme") == 0) {
-			printf("Vendo infos do filme...");
+			printf("\nVendo infos do filme...\n");
             ver_infos_filme(conn);
 		} else if (strcmp(buff,"remover filme") == 0) {
 			printf("\nRemovendo filme...\n");
