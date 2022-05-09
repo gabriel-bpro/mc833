@@ -18,6 +18,10 @@ void func(int sockfd) {
 		while ((buff[n++] = getchar()) != '\n');
 
 		buff[strcspn(buff,"\n")] = 0;
+
+		if (strcmp(buff, "sair") == 0) {
+			return;
+		}
 		
 		write(sockfd, buff, sizeof(buff));
 		memset(&buff, 0, sizeof(buff));

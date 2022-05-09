@@ -128,7 +128,7 @@ void listar_filmes(int conn) {
 
 void remover_filme(int conn) {
     char msg[80];
-    int flag = 0;
+    int flag;
 
     // Pede o ID do filme
     strcpy(msg, "Digite o ID do filme que deseja remover: ");
@@ -151,12 +151,18 @@ void remover_filme(int conn) {
         }
     }
 
+    // Deleta o arquivo do servidor
+    char file_name[15];
+    sprintf(file_name, "%d", id_to_rmv);
+    strcat(file_name, ".txt");
+    flag = remove(file_name);
+
     memset(&msg, 0, sizeof(msg));
 
-    if (flag != 1) {
-        strcpy(msg, "ID inválido: filme não existe. Deseja fazer outra operação? ");
+    if (flag == 0) {
+        strcpy(msg, "Filme removido. Deseja fazer outra operação? ");
     } else {
-        strcpy(msg, "Deseja fazer outra operação? ");
+        strcpy(msg, "Erro ao remover filme: cheque novamente o ID. Deseja fazer outra operação? ");
     }
 
     write(conn, msg, sizeof(msg));
