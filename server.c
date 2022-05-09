@@ -101,6 +101,37 @@ void cadastrar_filme(int conn) {
     write(conn, msg, sizeof(msg));
 }
 
+void adicionar_genero(int conn) {
+    FILE *f;
+    char msg[80];
+
+    // Pede o ID do filme
+    strcpy(msg, "Digite o ID do filme: ");
+    write(conn, msg, sizeof(msg));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+
+    int id = atoi(msg);
+
+    memset(&msg, 0, sizeof(msg));
+
+    // Pede o genero
+    strcpy(msg, "Digite o genero que deseja adicionar: ");
+    write(conn, msg, sizeof(msg));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+
+    char genre[30];
+    genre = strcpy(genre, msg);
+
+    for (int i = 0; i < movies_counter; i++) {
+        if (movies[i].id == id) {
+            
+        }
+    }
+
+}
+
 void listar_titulos(int conn) {
     char msg[80];
 
@@ -129,6 +160,7 @@ void listar_filmes(int conn) {
 void remover_filme(int conn) {
     char msg[80];
     int flag;
+    int pos = -1;
 
     // Pede o ID do filme
     strcpy(msg, "Digite o ID do filme que deseja remover: ");
@@ -138,18 +170,18 @@ void remover_filme(int conn) {
 
     int id_to_rmv = atoi(msg);
 
-    for (int i = movies_counter-1; i >= 0; i--) {
+    for (int i = 0; i < movies_counter; i++) {
         if (movies[i].id == id_to_rmv) {
-            flag = 1;
-            if (i != movies_counter-1) {
-                movies[i] = movies[i+1];
-            } else {
-                memset(&movies[i], 0, sizeof(Movie));
-            }
-
-            movies_counter--;
+            pos = i;
+            break;
         }
     }
+    
+    for (int i = pos; i < movies_counter-1; i++) {
+        movies[i] = movies[i+1];
+    }
+
+    movies_counter--;
 
     // Deleta o arquivo do servidor
     char file_name[15];
@@ -216,7 +248,8 @@ void func(int conn) {
             cadastrar_filme(conn);
             printf("\nCadastro finalizado\n");
 		} else if (strcmp(buff,"adicionar genero") == 0) {
-			printf("Adicionando genero");
+			printf("\nAdicionando genero...\n");
+            adicionar_genero(conn);
 		} else if (strcmp(buff,"listar titulos") == 0) {
 			printf("\nListando titulos...\n");
             listar_titulos(conn);
