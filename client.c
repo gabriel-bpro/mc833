@@ -16,15 +16,16 @@ void func(int sockfd) {
 		
 		n = 0;
 		while ((buff[n++] = getchar()) != '\n');
-
 		buff[strcspn(buff,"\n")] = 0;
+		
+		write(sockfd, buff, sizeof(buff));
 
 		if (strcmp(buff, "sair") == 0) {
 			return;
 		}
-		
-		write(sockfd, buff, sizeof(buff));
+
 		memset(&buff, 0, sizeof(buff));
+
 		read(sockfd, buff, sizeof(buff));
 		printf("%s", buff);
 	}
