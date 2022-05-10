@@ -10,6 +10,7 @@
 #define MAX_CONNS 5
 
 
+// Estrutura Movie utilizada para armazenar os atributos dos filmes
 typedef struct Movie {
 	int id;
 	char title[60];
@@ -18,7 +19,7 @@ typedef struct Movie {
 	int year;
 } Movie;
 
-
+// Função auxiliar para verificar se o arquivo com determinado ID existe ou não
 int existe_arq(int id) {
     FILE *f;
     char file_name[15];
@@ -34,6 +35,7 @@ int existe_arq(int id) {
     return 0;
 }
 
+// Função para a leitura de um arquivo com determinado ID e posterior transformação em uma estrutura Movie
 Movie file_to_movie(int id) {
     FILE *f;
     Movie movie;
@@ -91,6 +93,7 @@ Movie file_to_movie(int id) {
     return movie;
 }
 
+// Função para a transcrição do conteúdo de uma estrutura Movie em um arquivo txt
 void movie_to_file(Movie movie) {
     FILE *f;
     char file_name[30];
@@ -109,6 +112,7 @@ void movie_to_file(Movie movie) {
     fclose(f);
 }
 
+// Função para o cadastro de um novo filme, armazenando-o em um arquivo no diretório do projeto
 void cadastrar_filme(int conn) {
     char msg[1024];
     Movie movie;
@@ -162,6 +166,7 @@ void cadastrar_filme(int conn) {
     write(conn, msg, strlen(msg));
 }
 
+// Função para adição de gênero em um filme já existente
 void adicionar_genero(int conn) {
     Movie movie;
     char msg[1024];
@@ -201,6 +206,7 @@ void adicionar_genero(int conn) {
     }
 }
 
+// Função para listagem de titulos dos filmes disponíveis no servidor
 void listar_titulos(int conn) {
     char msg[1024];
     memset(&msg, 0, sizeof(msg));
@@ -230,6 +236,7 @@ void listar_titulos(int conn) {
     }
 }
 
+// Função para listagem de todas as informações de todos os filmes disponíveis no servidor
 void listar_filmes(int conn) {
     char msg[1024];
     memset(&msg, 0, sizeof(msg));
@@ -259,6 +266,7 @@ void listar_filmes(int conn) {
     }
 }
 
+// Função para listagem dos filmes de determinado gênero especificado pelo usuário
 void listar_info_gen(int conn) {
     char msg[1024];
     char genre[60];
@@ -299,6 +307,7 @@ void listar_info_gen(int conn) {
     }
 }
 
+// Função para a remoção de um filme com ID especificado pelo usuário
 void remover_filme(int conn) {
     char msg[1024];
     int flag;
@@ -328,6 +337,7 @@ void remover_filme(int conn) {
     write(conn, msg, strlen(msg));
 }
 
+// Função para a visualização das informações de um determinado filme especificado pelo usuário através do ID
 void ver_infos_filme(int conn) {
     char msg[1024];
     Movie movie;
@@ -398,51 +408,52 @@ int main() {
     int sockfd;
     pid_t childpid;
 
-    // Socket creation
+    // Criação do socket
     sockfd = socket(PF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        perror("Error when creating socket");
+        perror("Erro ao criar o socket");
         exit(1);
     }
 
-    // Make sure the struct is empty
+    // Esvaziamento do espaço de memória alocado para a estrutura s
     memset(&s, 0, sizeof(s));
 
-    // IP and Port assignments
+    // Atribuições de IP e porta
     s.sin_family = AF_INET;
     s.sin_addr.s_addr = INADDR_ANY;
     s.sin_port = htons(SERVER_PORT);
 
-    // Binding socket to given address
+    // Binding do socket para o determinado endereço definido
     if ((bind(sockfd, (struct sockaddr *)&s, sizeof(s))) != 0) {
-        perror("Error when binding socket");
+        perror("Erro ao realizar o binding do socket");
         exit(1);
     }
 
-    // Server is ready to listen
+    // Listen para que o servidor esteja pronto para comunicação
     if ((listen(sockfd, MAX_CONNS)) != 0) {
-        perror("Error when listening");
+        perror("Erro ao realizar a operação de listen");
         exit(1);
     }
 
     for (;;) {
         int len = sizeof(client);
    
-        // Accept the connection request from client
+        // Aceita o pedido de conexão de um cliente
         int new_s = accept(sockfd, (struct sockaddr *)&client, &len);
         if (new_s < 0) {
-            perror("Error when accepting a connection");
+            perror("Erro ao estabelecer a conexão com o cliente");
             exit(1);
         }
 
+        // Fork realizado para que múltiplos clientes possam se comunicar com o servidor
         if ((childpid = fork()) == 0) {
-            // Child closes listening main socket
+            // Child para de escutar o socket principal
             close(sockfd);
 
-            // Function for chatting between client and server
+            // Função referente a comunicação entre servidor-cliente
             func(new_s);
 
-            // Parent closes connected socket
+            // Ao terminar a comunicação, o socket "filho" é fechado
             close(new_s);
             exit(0);
         }
@@ -450,6 +461,5 @@ int main() {
         close(new_s);
     }
 
-    // Close the socket after client-server interaction
     close(sockfd);
 }

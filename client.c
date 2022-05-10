@@ -6,7 +6,7 @@
 #define SERVER_PORT 8080
 
 
-void func(int sockfd) {
+void chat(int sockfd) {
 	char buff[1024];
 	int n;
 
@@ -14,12 +14,14 @@ void func(int sockfd) {
 	for (;;) {
         memset(&buff, 0, sizeof(buff));
 		
+		// Leitura do usuário ocorre até que pressione Enter
 		n = 0;
 		while ((buff[n++] = getchar()) != '\n');
 		buff[strcspn(buff,"\n")] = 0;
 		
 		write(sockfd, buff, strlen(buff));
 
+		// Ao digitar "sair", o cliente se desconecta, fechando seu socket
 		if (strcmp(buff, "sair") == 0) {
 			return;
 		}
@@ -27,38 +29,39 @@ void func(int sockfd) {
 		memset(&buff, 0, sizeof(buff));
 
 		read(sockfd, buff, sizeof(buff));
+		// Após a leitura da mensagem enviada pelo servidor, temos a impressão do conteúdo no lado do cliente
 		printf("%s", buff);
 	}
 }
 
 int main() {
-	int sockfd, connfd;
+	int sockfd;
 	struct sockaddr_in s;
 
-	// Socket creation
+	// Criação do socket
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
-		perror("Error when creating client socket");
+		perror("Erro na criação do socket");
         exit(1);
 	}
     
-    // Make sure the struct is empty
+    // Esvazia o espaço de memória alocado para a estrutura s
     memset(&s, 0, sizeof(s));
 
-	// IP and Port assignments
+	// Atribuição do IP e porta
 	s.sin_family = AF_INET;
 	s.sin_addr.s_addr = inet_addr("127.0.0.1");
 	s.sin_port = htons(SERVER_PORT);
 
-	// connect the client socket to server socket
+	// Conexão entre cliente e servidor
 	if (connect(sockfd, (struct sockaddr *)&s, sizeof(s)) != 0) {
-		perror("Error when connecting with server");
+		perror("Erro ao tentar conectar com o servidor");
 		exit(1);
 	}
 
-	// function for chat
-	func(sockfd);
+	// Chat entre cliente e servidor
+	chat(sockfd);
 
-	// close the socket
+	// Fecha o socket após a interação com o servidor
 	close(sockfd);
 }
