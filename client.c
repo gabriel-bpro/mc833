@@ -7,7 +7,7 @@
 
 
 void func(int sockfd) {
-	char buff[80];
+	char buff[1024];
 	int n;
 
 	printf("O que deseja fazer: ");
@@ -18,7 +18,7 @@ void func(int sockfd) {
 		while ((buff[n++] = getchar()) != '\n');
 		buff[strcspn(buff,"\n")] = 0;
 		
-		write(sockfd, buff, sizeof(buff));
+		write(sockfd, buff, strlen(buff));
 
 		if (strcmp(buff, "sair") == 0) {
 			return;

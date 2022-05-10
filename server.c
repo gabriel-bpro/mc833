@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -7,7 +8,6 @@
 #include <netdb.h>
 #define SERVER_PORT 8080
 #define MAX_CONNS 5
-#define MAX_MOVIES 10
 
 
 typedef struct Movie {
@@ -93,7 +93,7 @@ Movie file_to_movie(int id) {
 
 void movie_to_file(Movie movie) {
     FILE *f;
-    char file_name[15];
+    char file_name[30];
 
     sprintf(file_name, "%d", movie.id);
     strcat(file_name, ".txt");
@@ -110,13 +110,13 @@ void movie_to_file(Movie movie) {
 }
 
 void cadastrar_filme(int conn) {
-    char msg[80];
+    char msg[1024];
     Movie movie;
 
 
     // Pede o titulo do filme
     strcpy(msg, "Digite o titulo do filme: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
     strcpy(movie.title, msg);
@@ -125,7 +125,7 @@ void cadastrar_filme(int conn) {
 
     // Pede o genero do filme
     strcpy(msg, "Digite o genero do filme: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
     strcpy(movie.genre, msg);
@@ -134,7 +134,7 @@ void cadastrar_filme(int conn) {
 
     // Pede o nome do diretor do filme
     strcpy(msg, "Digite o nome do diretor do filme: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
     strcpy(movie.director, msg);
@@ -143,7 +143,7 @@ void cadastrar_filme(int conn) {
 
     // Pede o ano do filme
     strcpy(msg, "Digite o ano do filme: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
     movie.year = atoi(msg);
@@ -159,16 +159,16 @@ void cadastrar_filme(int conn) {
 
     memset(&msg, 0, sizeof(msg));
     strcpy(msg, "Filme cadastrado com sucesso! Deseja fazer outra operação? ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
 }
 
 void adicionar_genero(int conn) {
     Movie movie;
-    char msg[80];
+    char msg[1024];
 
     // Pede o ID do filme
     strcpy(msg, "Digite o ID do filme: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
 
@@ -178,7 +178,7 @@ void adicionar_genero(int conn) {
 
     // Pede o genero
     strcpy(msg, "Digite o genero que deseja adicionar: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
 
@@ -189,7 +189,7 @@ void adicionar_genero(int conn) {
 
     if (!existe_arq(id)) {
         strcpy(msg, "ID inválido. Deseja fazer outra operação? ");
-        write(conn, msg, sizeof(msg));
+        write(conn, msg, strlen(msg));
     } else {
         movie = file_to_movie(id);
         strcat(movie.genre, ",");
@@ -197,33 +197,115 @@ void adicionar_genero(int conn) {
         movie_to_file(movie);
 
         strcpy(msg, "Deseja fazer outra operação? ");
-        write(conn, msg, sizeof(msg));
+        write(conn, msg, strlen(msg));
     }
 }
 
 void listar_titulos(int conn) {
-    char msg[80];
+    char msg[1024];
+    memset(&msg, 0, sizeof(msg));
 
-    strcpy(msg, "Deseja fazer outra operação? ");
-    write(conn, msg, sizeof(msg));
+    char movie_info[1024];
+    Movie movie;
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(".");
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            if (strstr(dir->d_name, ".txt") != NULL) {
+                char* token = strtok(dir->d_name, ".");
+                int id = atoi(token);
+
+                movie = file_to_movie(id);
+
+                sprintf(movie_info, "ID:%d Titulo:%s\n", movie.id, movie.title);
+                strcat(msg, movie_info);
+                memset(&movie_info, 0, strlen(movie_info));
+            }
+        }
+        strcat(msg, "Deseja fazer outra operação? ");
+        write(conn, msg, strlen(msg));
+        closedir(d);
+    }
 }
 
 void listar_filmes(int conn) {
-    char msg[80];
+    char msg[1024];
+    memset(&msg, 0, sizeof(msg));
 
+    char movie_info[1024];
+    Movie movie;
 
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(".");
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            if (strstr(dir->d_name, ".txt") != NULL) {
+                char* token = strtok(dir->d_name, ".");
+                int id = atoi(token);
 
-    strcpy(msg, "Deseja fazer outra operação? ");
-    write(conn, msg, sizeof(msg));
+                movie = file_to_movie(id);
+
+                sprintf(movie_info, "ID:%d Titulo:%s Genero:%s Direcao:%s Ano:%d\n", movie.id, movie.title, movie.genre, movie.director, movie.year);
+                strcat(msg, movie_info);
+                memset(&movie_info, 0, strlen(movie_info));
+            }
+        }
+        strcat(msg, "Deseja fazer outra operação? ");
+        write(conn, msg, strlen(msg));
+        closedir(d);
+    }
+}
+
+void listar_info_gen(int conn) {
+    char msg[1024];
+    char genre[60];
+
+    // Pede o genero
+    strcpy(msg, "Digite o genero: ");
+    write(conn, msg, strlen(msg));
+    memset(&msg, 0, sizeof(msg));
+    read(conn, msg, sizeof(msg));
+    strcpy(genre, msg);
+
+    memset(&msg, 0, sizeof(msg));
+
+    char movie_info[1024];
+    Movie movie;
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(".");
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            if (strstr(dir->d_name, ".txt") != NULL) {
+                char* token = strtok(dir->d_name, ".");
+                int id = atoi(token);
+
+                movie = file_to_movie(id);
+
+                if (strstr(movie.genre, genre) != NULL) {
+                    sprintf(movie_info, "ID:%d Titulo:%s Direcao:%s Ano:%d\n", movie.id, movie.title, movie.director, movie.year);
+                    strcat(msg, movie_info);
+                    memset(&movie_info, 0, strlen(movie_info));
+                }
+            }
+        }
+        strcat(msg, "Deseja fazer outra operação? ");
+        write(conn, msg, strlen(msg));
+        closedir(d);
+    }
 }
 
 void remover_filme(int conn) {
-    char msg[80];
+    char msg[1024];
     int flag;
 
     // Pede o ID do filme
     strcpy(msg, "Digite o ID do filme que deseja remover: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
 
@@ -243,45 +325,42 @@ void remover_filme(int conn) {
         strcpy(msg, "Erro ao remover filme: cheque novamente o ID. Deseja fazer outra operação? ");
     }
 
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
 }
 
 void ver_infos_filme(int conn) {
-    char msg[80];
+    char msg[1024];
     Movie movie;
 
     strcpy(msg, "Digite o ID do filme: ");
-    write(conn, msg, sizeof(msg));
+    write(conn, msg, strlen(msg));
     memset(&msg, 0, sizeof(msg));
     read(conn, msg, sizeof(msg));
 
     int id_to_see = atoi(msg);
-    printf("%d", id_to_see);
 
     memset(&msg, 0, sizeof(msg));
 
     if (!existe_arq(id_to_see)) {
         strcpy(msg, "ID inválido. Deseja fazer outra operação? ");
-        write(conn, msg, sizeof(msg));
+        write(conn, msg, strlen(msg));
     } else {
         movie = file_to_movie(id_to_see);
-        snprintf(msg, sizeof(msg), "ID:%d\nTitulo:%s\nGenero:%s\nDirecao:%s\nAno:%d\nDeseja fazer outra operação? ", movie.id, movie.title, movie.genre, movie.director, movie.year);
-        write(conn, msg, sizeof(msg));
+        sprintf(msg, "ID:%d\nTitulo:%s\nGenero:%s\nDirecao:%s\nAno:%d\nDeseja fazer outra operação? ", movie.id, movie.title, movie.genre, movie.director, movie.year);
+        write(conn, msg, strlen(msg));
     }
 }
 
 void func(int conn) {
-    char buff[80];
+    char buff[1024];
     int n;
     // infinite loop for chat
     for (;;) {
         memset(&buff, 0, sizeof(buff));
    
-        // read the message from client and copy it in buffer
         read(conn, buff, sizeof(buff));
 
-        // print buffer which contains the client contents
-        printf("From client: %s", buff);
+        printf("Msg do cliente: %s", buff);
 
         if (strcmp(buff,"cadastrar filme") == 0) {
 			printf("\nCadastrando filme...");
@@ -296,6 +375,7 @@ void func(int conn) {
             listar_titulos(conn);
 		} else if (strcmp(buff,"listar info genero") == 0) {
 			printf("Listando info genero");
+            listar_info_gen(conn);
 		} else if (strcmp(buff,"listar filmes") == 0) {
 			printf("\nListando filmes...\n");
             listar_filmes(conn);
@@ -305,6 +385,7 @@ void func(int conn) {
 		} else if (strcmp(buff,"remover filme") == 0) {
 			printf("\nRemovendo filme...\n");
             remover_filme(conn);
+            printf("Filme removido\n");
 		} else if (strcmp(buff,"sair") == 0) {
             return;
         }
